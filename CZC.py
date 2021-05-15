@@ -20,14 +20,15 @@ def getDigitFromStock(stock) -> int:
 
 class CZC(Scraper):
     def __init__(self):
-        Scraper.__init__(self, "https://www.czc.cz/graficke-karty/produkty")
+        Scraper.__init__(self, "CZC", "https://www.czc.cz/graficke-karty/produkty")
 
     def scrape(self, callback):
         toSkip = 0
+        session = requests.session()
 
         while (True):
             params = f'?q-first={toSkip}'
-            page = requests.get(self.url + params)
+            page = session.get(self.url + params)
 
             soup = BeautifulSoup(page.content, 'html.parser')
             products = soup.find(id='tiles')
@@ -40,10 +41,13 @@ class CZC(Scraper):
             for product in products:
                 meta = json.loads(product['data-ga-impression'])
 
+                name = meta['name']
+                price = meta['price']
+
                 stock = product.find('span', class_='availability-state-on-stock')
                 stock = getDigitFromStock(stock)
 
-                callback(Product(meta['name'], meta['price'], stock))
+                callback(Product(self.store, name, price, stock))
 
             toSkip += len(products)
             time.sleep(1)

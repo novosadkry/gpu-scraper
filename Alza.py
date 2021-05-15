@@ -8,7 +8,7 @@ from bs4 import BeautifulSoup
 
 def getDigitFromStock(stock) -> int:
     if stock is not None:
-        for s in stock.text.split():
+        for s in stock.split():
             if s.isdigit():
                 stock = int(s)
                 break
@@ -20,14 +20,14 @@ def getDigitFromStock(stock) -> int:
 
 class Alza(Scraper):
     def __init__(self):
-        Scraper.__init__(self, "https://www.alza.cz/graficke-karty/18842862.htm")
+        Scraper.__init__(self, "Alza", "https://www.alza.cz/graficke-karty/18842862-p{pageNum}.htm")
 
     def scrape(self, callback):
-        page = 0
+        pageNum = 1
+        session = requests.session()
 
         while (True):
-            params = f'#f&pg={page}'
-            page = requests.get(self.url + params)
+            page = session.get(self.url.format(pageNum = pageNum))
 
             soup = BeautifulSoup(page.content, 'html.parser')
             products = soup.find(id='boxes')
@@ -37,14 +37,19 @@ class Alza(Scraper):
 
             products = products.findAll('div', class_='box')
 
-            for product in products:
-                name = product.find('a', class_='name').text
-                price = product.find('span', class_='c2').text
+            if len(products) < 1:
+                break
 
-                stock = product.find('a', 'impression-binded')['data-impression-dimension13']
+            for product in products:
+                meta = product.find('a', class_='name')
+
+                name = meta['data-impression-name']
+                price = int(float(meta['data-impression-metric2'].replace(',', '.')))
+
+                stock = meta['data-impression-dimension13']
                 stock = getDigitFromStock(stock)
 
-                callback(Product(name, price, stock))
+                callback(Product(self.store, name, price, stock))
 
-            page += 1
+            pageNum += 1
             time.sleep(1)

@@ -1,7 +1,14 @@
 from CZC import CZC
+from Alza import Alza
 from product import Product
 
-def onProduct(product: Product):
-    print(product.name, product.price, product.inStock, sep=', ')
+import json
 
-CZC().scrape(onProduct)
+products = {}
+
+def onProductFetch(product: Product):
+    print(product.name, product.price, product.inStock, sep=', ')
+    products[product.name] = product
+
+Alza().scrape(onProductFetch)
+CZC().scrape(onProductFetch)
