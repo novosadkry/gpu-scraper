@@ -5,17 +5,25 @@ from product import Product
 from product import onProductFetch
 
 import threading
+import time
 
 def scraperThread(scraper: Scraper):
     while True:
         scraper.scrape(onProductFetch)
 
 
-alzaThread = threading.Thread(target = scraperThread, args = (Alza(), ))
-czcThread = threading.Thread(target = scraperThread, args = (CZC(), ))
+if __name__ == '__main__':
+    alzaThread = threading.Thread(target = scraperThread, args = (Alza(), ))
+    czcThread = threading.Thread(target = scraperThread, args = (CZC(), ))
 
-alzaThread.start()
-czcThread.start()
+    alzaThread.daemon = True
+    czcThread.daemon = True
 
-alzaThread.join()
-czcThread.join()
+    alzaThread.start()
+    czcThread.start()
+
+    try:
+        while True:
+            time.sleep(1)
+    except KeyboardInterrupt:
+        pass
