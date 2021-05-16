@@ -1,6 +1,7 @@
 import jsons
 import threading
 import redis
+import shortuuid
 
 class Product():
     def __init__(self, store, name, price, inStock):
@@ -9,8 +10,10 @@ class Product():
         self.price = price
         self.inStock = inStock
 
+
 class ProductGroup():
-    def __init__(self, name):
+    def __init__(self, uid, name):
+        self.uid = uid
         self.name = name
         self.products = []
 
@@ -43,54 +46,55 @@ class ProductGroup():
         data = []
         for p in self.products:
             data.append({"store": p.store, "price": p.price, "inStock": p.inStock})
-        return jsons.dumps(data)
+        return jsons.dumps({"id": self.uid, "stores": data})
 
 
 redisInst = redis.Redis(host = 'ip.zahrajto.wtf', port = 25543, password = 'tvojemama')
 redisInst.flushdb()
 
+storedGroups = {}
+fetchLock = threading.Lock()
+
+
 def pushGroupToRedis(group: ProductGroup):
     redisInst.set(group.name, group.toJSON())
+
 
 def removeGroupFromRedis(group: ProductGroup):
     redisInst.delete(group.name)
 
 
-storedGroups = {}
-fetchLock = threading.Lock()
-
 def onProductUpdated(product: Product):
     pushGroupToRedis(storedGroups[product.name])
-    print(product.name + " : " +storedGroups[product.name].toJSON())
-
-def onProductRemoved(product: Product):
-    pushGroupToRedis(storedGroups[product.name])
-
-def onGroupRemoved(group: ProductGroup):
-    removeGroupFromRedis(group)
+    print(product.name + " : " + storedGroups[product.name].toJSON())
 
 
 def removeGroup(group: ProductGroup):
     storedGroups.pop(group.name, None)
-    onGroupRemoved(group)
+    removeGroupFromRedis(group)
+
 
 def removeProduct(product: Product):
     if product.name in storedGroups:
         group = storedGroups[product.name]
         group.remove(product)
-        onProductRemoved(product)
+
+        pushGroupToRedis(storedGroups[product.name])
 
         if len(group.products) < 1:
             removeGroup(group)
 
-def addProduct(product: Product):
+
+def getOrAddGroup(product: Product):
     if product.name not in storedGroups:
-        newGroup = ProductGroup(product.name)
-        newGroup.add(product)
-        storedGroups[product.name] = newGroup
-    else:
-        group = storedGroups[product.name]
-        group.add(product)
+        storedGroups[product.name] = ProductGroup(shortuuid.uuid(), product.name)
+    return storedGroups[product.name]
+
+
+def addProduct(product: Product):
+    group = getOrAddGroup(product)
+    group.add(product)
+
 
 def updateProduct(product: Product):
     notifyUpdate = True
@@ -104,6 +108,7 @@ def updateProduct(product: Product):
 
     if notifyUpdate:
         onProductUpdated(product)
+
 
 def onProductFetch(product: Product):
     with fetchLock:
