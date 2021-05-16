@@ -9,57 +9,105 @@ class Product():
         self.price = price
         self.inStock = inStock
 
+class ProductGroup():
+    def __init__(self, name):
+        self.name = name
+        self.products = []
 
-storedProducts = {}
-fetchLock = threading.Lock()
+    def remove(self, product: Product):
+        self.products = [p for p in self.products if p.store != product.store]
+
+    def add(self, product: Product):
+        for p in self.products:
+            if p.store == product.store:
+                p.price = product.price
+                p.inStock = product.inStock
+                break
+        else:
+            self.products.append(product)
+
+    def contains(self, product: Product):
+        for p in self.products:
+            if p.store == product.store:
+                return True
+        return False
+
+    def hasChanged(self, product: Product):
+        for p in self.products:
+            if p.store == product.store:
+                if p.inStock != product.inStock: return True
+                if p.price != product.price: return True
+        return False
+
+    def toJSON(self):
+        data = []
+        for p in self.products:
+            data.append({"store": p.store, "price": p.price, "inStock": p.inStock})
+        return jsons.dumps(data)
+
+
 redisInst = redis.Redis(host = 'ip.zahrajto.wtf', port = 25543, password = 'tvojemama')
+redisInst.flushdb()
+
+def pushGroupToRedis(group: ProductGroup):
+    redisInst.set(group.name, group.toJSON())
+
+def removeGroupFromRedis(group: ProductGroup):
+    redisInst.delete(group.name)
 
 
-def pushStoredToRedis(product: Product):
-    redisInst.set(product.name, jsons.dumps(storedProducts[product.name]))
-
+storedGroups = {}
+fetchLock = threading.Lock()
 
 def onProductUpdated(product: Product):
-    print(product.name + " : " + jsons.dumps(storedProducts[product.name]))
+    pushGroupToRedis(storedGroups[product.name])
+    print(product.name + " : " +storedGroups[product.name].toJSON())
+
+def onProductRemoved(product: Product):
+    pushGroupToRedis(storedGroups[product.name])
+
+def onGroupRemoved(group: ProductGroup):
+    removeGroupFromRedis(group)
 
 
-def addNewProduct(product: Product):
-    storedProducts[product.name] = {
-        product.store: {
-            "price": product.price,
-            "inStock": product.inStock
-        }
-    }
-    pushStoredToRedis(product)
+def removeGroup(group: ProductGroup):
+    storedGroups.pop(group.name, None)
+    onGroupRemoved(group)
 
+def removeProduct(product: Product):
+    if product.name in storedGroups:
+        group = storedGroups[product.name]
+        group.remove(product)
+        onProductRemoved(product)
+
+        if len(group.products) < 1:
+            removeGroup(group)
+
+def addProduct(product: Product):
+    if product.name not in storedGroups:
+        newGroup = ProductGroup(product.name)
+        newGroup.add(product)
+        storedGroups[product.name] = newGroup
+    else:
+        group = storedGroups[product.name]
+        group.add(product)
 
 def updateProduct(product: Product):
-    updated = False
+    notifyUpdate = True
 
-    if product.store not in storedProducts[product.name]:
-        updated = True
-    else:
-        if storedProducts[product.name][product.store]["price"] != product.price:
-            updated = True
-        if storedProducts[product.name][product.store]["inStock"] != product.inStock:
-            updated = True
+    if product.name in storedGroups:
+        group = storedGroups[product.name]
+        if group.contains(product):
+            notifyUpdate = group.hasChanged(product)
 
-    storedProducts[product.name][product.store] = {
-        "price": product.price,
-        "inStock": product.inStock
-    }
+    addProduct(product)
 
-    if updated:
-        pushStoredToRedis(product)
+    if notifyUpdate:
         onProductUpdated(product)
 
-
 def onProductFetch(product: Product):
-    if product.inStock == 0:
-        return
-
     with fetchLock:
-        if product.name in storedProducts:
+        if product.inStock > 0:
             updateProduct(product)
         else:
-            addNewProduct(product)
+            removeProduct(product)
