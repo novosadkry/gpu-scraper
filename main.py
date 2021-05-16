@@ -1,53 +1,21 @@
 from CZC import CZC
 from Alza import Alza
+from scraper import Scraper
 from product import Product
+from product import onProductFetch
 
-import jsons
+import threading
 
-storedProducts = {}
-
-def onProductUpdated(product: Product):
-    print(jsons.dumps(storedProducts[product.name]))
-
-
-def addNewProduct(product: Product):
-    storedProducts[product.name] = {
-        product.store: {
-            "price": product.price,
-            "inStock": product.inStock
-        }
-    }
+def scraperThread(scraper: Scraper):
+    while True:
+        scraper.scrape(onProductFetch)
 
 
-def updateProduct(product: Product):
-    updated = False
+alzaThread = threading.Thread(target = scraperThread, args = (Alza(), ))
+czcThread = threading.Thread(target = scraperThread, args = (CZC(), ))
 
-    if product.store not in storedProducts[product.name]:
-        updated = True
-    else:
-        if storedProducts[product.name][product.store]["price"] != product.price:
-            updated = True
-        if storedProducts[product.name][product.store]["inStock"] != product.inStock:
-            updated = True
+alzaThread.start()
+czcThread.start()
 
-    storedProducts[product.name][product.store] = {
-        "price": product.price,
-        "inStock": product.inStock
-    }
-
-    if updated:
-        onProductUpdated(product)
-
-
-def onProductFetch(product: Product):
-    if product.inStock == 0:
-        return
-
-    if product.name in storedProducts:
-        updateProduct(product)
-    else:
-        addNewProduct(product)
-
-
-Alza().scrape(onProductFetch)
-CZC().scrape(onProductFetch)
+alzaThread.join()
+czcThread.join()
