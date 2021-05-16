@@ -1,5 +1,6 @@
 import jsons
 import threading
+import redis
 
 class Product():
     def __init__(self, store, name, price, inStock):
@@ -11,6 +12,12 @@ class Product():
 
 storedProducts = {}
 fetchLock = threading.Lock()
+redisInst = redis.Redis(host = 'ip.zahrajto.wtf', port = 25543, password = 'tvojemama')
+
+
+def pushStoredToRedis(product: Product):
+    redisInst.set(product.name, jsons.dumps(storedProducts[product.name]))
+
 
 def onProductUpdated(product: Product):
     print(product.name + " : " + jsons.dumps(storedProducts[product.name]))
@@ -23,6 +30,7 @@ def addNewProduct(product: Product):
             "inStock": product.inStock
         }
     }
+    pushStoredToRedis(product)
 
 
 def updateProduct(product: Product):
@@ -42,6 +50,7 @@ def updateProduct(product: Product):
     }
 
     if updated:
+        pushStoredToRedis(product)
         onProductUpdated(product)
 
 
