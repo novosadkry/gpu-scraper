@@ -43,6 +43,7 @@ class TSBohemia(Scraper):
                 break
 
             for product in products:
+                uid = self.store + ":" + product['data-stiid']
                 name = product.find('a', class_='stihref').text
 
                 price = product.find('p', class_='wvat').text
@@ -56,7 +57,7 @@ class TSBohemia(Scraper):
                 else:
                     stock = getDigitFromStock(stock.text)
 
-                callback(Product(self.store, name, price, stock))
+                callback(Product(self.store, uid, name, price, stock))
 
             pageNum += 1
             time.sleep(1)

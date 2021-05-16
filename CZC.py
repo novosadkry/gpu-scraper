@@ -41,13 +41,14 @@ class CZC(Scraper):
             for product in products:
                 meta = json.loads(product['data-ga-impression'])
 
+                uid = self.store + ":" + meta['id']
                 name = meta['name']
                 price = meta['price']
 
                 stock = product.find('span', class_='availability-state-on-stock')
                 stock = getDigitFromStock(stock)
 
-                callback(Product(self.store, name, price, stock))
+                callback(Product(self.store, uid, name, price, stock))
 
             toSkip += len(products)
             time.sleep(1)

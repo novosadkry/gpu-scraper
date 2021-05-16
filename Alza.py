@@ -43,13 +43,14 @@ class Alza(Scraper):
             for product in products:
                 meta = product.find('a', class_='name')
 
+                uid = self.store + ":" + meta['data-impression-id']
                 name = meta['data-impression-name']
                 price = int(float(meta['data-impression-metric2'].replace(',', '.')))
 
                 stock = meta['data-impression-dimension13']
                 stock = getDigitFromStock(stock)
 
-                callback(Product(self.store, name, price, stock))
+                callback(Product(self.store, uid, name, price, stock))
 
             pageNum += 1
             time.sleep(1)
