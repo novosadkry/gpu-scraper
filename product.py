@@ -63,7 +63,7 @@ def removeProduct(product: Product):
 def updateProduct(product: Product):
     if hasProductChanged(product):
         storedProducts[product.id] = product
-        log(Severity.UPDATE, product.id, f"[name: {product.name}, price: {product.price}, inStock: {product.inStock}]")
+        log(Severity.UPDATE, product.id, f"Name: '{product.name}', Price: {product.price}, InStock: {product.inStock}")
         redis.set(product.id, jsons.dumps(product))
 
 def onProductFetch(product: Product):
