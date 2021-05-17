@@ -1,4 +1,5 @@
 from enum import Enum
+import threading
 
 class Severity(Enum):
     INFO = '\033[96m'
@@ -10,6 +11,12 @@ class Severity(Enum):
 ENDC = '\033[0m'
 BOLD = '\033[1m'
 
-def log(severity: Severity, *values, separator=' '):
-    heading = f"{BOLD}{severity.value}({severity.name}){ENDC}{severity.value}"
+logLock = threading.Lock()
+
+def log(severity: Severity, source, *values, separator=' '):
+    heading = f"{BOLD}{severity.value}({severity.name}){ENDC}{severity.value} {source.ljust(16)} : "
     print(heading, *values, ENDC, sep=separator)
+
+def logc(severity: Severity, source, *values, separator=' '):
+    with logLock:
+        log(severity, source, *values, separator)

@@ -48,7 +48,7 @@ def loadProducts():
         product = Product.fromJSON(redis.get(key))
         storedProducts[product.id] = product
         count += 1
-    log(Severity.INFO, f"Loaded {count} products")
+    log(Severity.INFO, "Redis", f"Loaded {count} products")
 
 def hasProductChanged(product: Product):
     if product.id in storedProducts:
@@ -63,7 +63,7 @@ def removeProduct(product: Product):
 def updateProduct(product: Product):
     if hasProductChanged(product):
         storedProducts[product.id] = product
-        log(Severity.UPDATE, f"{product.id.ljust(16)} : [name: {product.name}, price: {product.price}, inStock: {product.inStock}]")
+        log(Severity.UPDATE, product.id, f"[name: {product.name}, price: {product.price}, inStock: {product.inStock}]")
         redis.set(product.id, jsons.dumps(product))
 
 def onProductFetch(product: Product):

@@ -3,6 +3,10 @@ from scraper import Scraper
 import requests
 import json
 import time
+
+from log import Severity
+from log import logc
+
 from product import Product
 from bs4 import BeautifulSoup
 
@@ -29,6 +33,7 @@ class CZC(Scraper):
         urlParams = '?q-first={toSkip}'
         urlPath = "/graficke-karty/produkty"
 
+        count = 0
         while (True):
 
             page = session.get(self.url + urlPath + urlParams.format(toSkip = toSkip))
@@ -55,6 +60,9 @@ class CZC(Scraper):
                 stock = getDigitFromStock(stock)
 
                 callback(Product(self.store, uid, name, price, stock, link))
+                count += 1
 
             toSkip += len(products)
             time.sleep(1)
+
+        logc(Severity.INFO, self.store, f"Checked {count} products")

@@ -3,6 +3,10 @@ from scraper import Scraper
 import requests
 import json
 import time
+
+from log import Severity
+from log import logc
+
 from product import Product
 from bs4 import BeautifulSoup
 
@@ -28,6 +32,7 @@ class Alza(Scraper):
 
         urlPath = "/graficke-karty/18842862-p{pageNum}.htm"
 
+        count = 0
         while (True):
             page = session.get(self.url + urlPath.format(pageNum = pageNum))
 
@@ -54,6 +59,9 @@ class Alza(Scraper):
                 stock = getDigitFromStock(stock)
 
                 callback(Product(self.store, uid, name, price, stock, link))
+                count += 1
 
             pageNum += 1
             time.sleep(1)
+
+        logc(Severity.INFO, self.store, f"Checked {count} products")

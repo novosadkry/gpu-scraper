@@ -38,5 +38,5 @@ if __name__ == '__main__':
         while True:
             time.sleep(1)
     except KeyboardInterrupt:
-        log(Severity.FAIL, "Keyboard interrupt, exiting...")
+        log(Severity.FAIL, "Main", "Keyboard interrupt, exiting...")
         pass

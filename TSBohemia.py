@@ -5,6 +5,9 @@ import jsons
 import time
 import re
 
+from log import Severity
+from log import logc
+
 from product import Product
 from bs4 import BeautifulSoup
 
@@ -30,6 +33,7 @@ class TSBohemia(Scraper):
 
         urlPath = "/elektronika-a-it-pc-komponenty-graficke-karty_c5581.html?page={pageNum}"
 
+        count = 0
         while (True):
             page = session.get(self.url + urlPath.format(pageNum = pageNum))
 
@@ -57,6 +61,9 @@ class TSBohemia(Scraper):
                 stock = 0 if stock is None else getDigitFromStock(stock.text)
 
                 callback(Product(self.store, uid, name, price, stock, link))
+                count += 1
 
             pageNum += 1
             time.sleep(1)
+
+        logc(Severity.INFO, self.store, f"Checked {count} products")
