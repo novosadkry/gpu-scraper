@@ -20,14 +20,16 @@ def getDigitFromStock(stock) -> int:
 
 class Alza(Scraper):
     def __init__(self):
-        Scraper.__init__(self, "Alza", "https://www.alza.cz/graficke-karty/18842862-p{pageNum}.htm")
+        Scraper.__init__(self, "Alza", "https://www.alza.cz")
 
     def scrape(self, callback):
         pageNum = 1
         session = requests.session()
 
+        urlPath = "/graficke-karty/18842862-p{pageNum}.htm"
+
         while (True):
-            page = session.get(self.url.format(pageNum = pageNum))
+            page = session.get(self.url + urlPath.format(pageNum = pageNum))
 
             soup = BeautifulSoup(page.content, 'html.parser')
             products = soup.find(id='boxes')
@@ -46,11 +48,12 @@ class Alza(Scraper):
                 uid = self.store + ":" + meta['data-impression-id']
                 name = meta['data-impression-name']
                 price = int(float(meta['data-impression-metric2'].replace(',', '.')))
+                link = self.url + meta['href']
 
                 stock = meta['data-impression-dimension13']
                 stock = getDigitFromStock(stock)
 
-                callback(Product(self.store, uid, name, price, stock))
+                callback(Product(self.store, uid, name, price, stock, link))
 
             pageNum += 1
             time.sleep(1)

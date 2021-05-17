@@ -22,14 +22,16 @@ def getDigitFromStock(stock) -> int:
 
 class TSBohemia(Scraper):
     def __init__(self):
-        Scraper.__init__(self, "TSBohemia", "https://www.tsbohemia.cz/elektronika-a-it-pc-komponenty-graficke-karty_c5581.html?page={pageNum}")
+        Scraper.__init__(self, "TSBohemia", "https://www.tsbohemia.cz")
 
     def scrape(self, callback):
         pageNum = 1
         session = requests.session()
 
+        urlPath = "/elektronika-a-it-pc-komponenty-graficke-karty_c5581.html?page={pageNum}"
+
         while (True):
-            page = session.get(self.url.format(pageNum = pageNum))
+            page = session.get(self.url + urlPath.format(pageNum = pageNum))
 
             soup = BeautifulSoup(page.content, 'html.parser')
             products = soup.find(id='gallarea')
@@ -50,14 +52,11 @@ class TSBohemia(Scraper):
                 price = re.sub("[^\d]+", "", price)
                 price = int(price)
 
+                link = '/' + product.find('a', class_='stihref')['href']
                 stock = product.find('em', class_='imgyes')
+                stock = 0 if stock is None else getDigitFromStock(stock.text)
 
-                if stock is None:
-                    stock = 0
-                else:
-                    stock = getDigitFromStock(stock.text)
-
-                callback(Product(self.store, uid, name, price, stock))
+                callback(Product(self.store, uid, name, price, stock, link))
 
             pageNum += 1
             time.sleep(1)
