@@ -4,6 +4,7 @@ from TSBohemia import TSBohemia
 
 from scraper import Scraper
 from product import Product
+from product import loadProducts
 from product import onProductFetch
 
 import threading
@@ -15,6 +16,8 @@ def scraperThread(scraper: Scraper):
 
 
 if __name__ == '__main__':
+    loadProducts()
+
     alzaThread = threading.Thread(target = scraperThread, args = (Alza(), ))
     czcThread = threading.Thread(target = scraperThread, args = (CZC(), ))
     tsThread = threading.Thread(target = scraperThread, args = (TSBohemia(), ))

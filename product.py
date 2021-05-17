@@ -13,14 +13,35 @@ class Product():
         self.inStock = inStock
         self.link = link
 
+    @staticmethod
+    def fromJSON(s):
+        d = jsons.loads(s)
+        return Product(
+            d['store'],
+            d['id'],
+            d['name'],
+            d['price'],
+            d['inStock'],
+            d['link']
+        )
+
     def compare(self, other):
         if self.price != other.price: return False
         if self.inStock != other.inStock: return False
         return True
 
-storedProducts = {}
 redis = Redis(host = 'ip.zahrajto.wtf', port = 25543, password = 'tvojemama')
+
+storedProducts = {}
 fetchLock = threading.Lock()
+
+def loadProducts():
+    count = 0
+    for key in redis.scan_iter("*"):
+        product = Product.fromJSON(redis.get(key))
+        storedProducts[product.id] = product
+        count += 1
+    print(f"Loaded {count} products")
 
 def hasProductChanged(product: Product):
     if product.id in storedProducts:
