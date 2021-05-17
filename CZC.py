@@ -23,8 +23,8 @@ def getDigitFromStock(stock) -> int:
     return stock
 
 class CZC(Scraper):
-    def __init__(self):
-        Scraper.__init__(self, "CZC", "https://www.czc.cz")
+    def __init__(self, delay):
+        Scraper.__init__(self, "CZC", "https://www.czc.cz", delay)
 
     def scrape(self, callback):
         toSkip = 0
@@ -63,6 +63,6 @@ class CZC(Scraper):
                 count += 1
 
             toSkip += len(products)
-            time.sleep(1)
+            time.sleep(self.delay)
 
         logc(Severity.INFO, self.store, f"Checked {count} products")

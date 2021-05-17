@@ -18,13 +18,12 @@ def scraperThread(scraper: Scraper):
     while True:
         scraper.scrape(onProductFetch)
 
-
 if __name__ == '__main__':
     setupRedis(host = 'ip.zahrajto.wtf', port = 25543, password = 'tvojemama')
 
-    alzaThread = threading.Thread(target = scraperThread, args = (Alza(), ))
-    czcThread = threading.Thread(target = scraperThread, args = (CZC(), ))
-    tsThread = threading.Thread(target = scraperThread, args = (TSBohemia(), ))
+    alzaThread = threading.Thread(target = scraperThread, args = (Alza(3), ))
+    czcThread = threading.Thread(target = scraperThread, args = (CZC(3), ))
+    tsThread = threading.Thread(target = scraperThread, args = (TSBohemia(5), ))
 
     alzaThread.daemon = True
     czcThread.daemon = True

@@ -24,8 +24,8 @@ def getDigitFromStock(stock) -> int:
     return stock
 
 class TSBohemia(Scraper):
-    def __init__(self):
-        Scraper.__init__(self, "TSBohemia", "https://www.tsbohemia.cz")
+    def __init__(self, delay):
+        Scraper.__init__(self, "TSBohemia", "https://www.tsbohemia.cz", delay)
 
     def scrape(self, callback):
         pageNum = 1
@@ -64,6 +64,6 @@ class TSBohemia(Scraper):
                 count += 1
 
             pageNum += 1
-            time.sleep(1)
+            time.sleep(self.delay)
 
         logc(Severity.INFO, self.store, f"Checked {count} products")
