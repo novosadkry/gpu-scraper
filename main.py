@@ -4,8 +4,12 @@ from TSBohemia import TSBohemia
 
 from scraper import Scraper
 from product import Product
+from product import setupRedis
 from product import loadProducts
 from product import onProductFetch
+
+from log import Severity
+from log import log
 
 import threading
 import time
@@ -16,7 +20,7 @@ def scraperThread(scraper: Scraper):
 
 
 if __name__ == '__main__':
-    loadProducts()
+    setupRedis(host = 'ip.zahrajto.wtf', port = 25543, password = 'tvojemama')
 
     alzaThread = threading.Thread(target = scraperThread, args = (Alza(), ))
     czcThread = threading.Thread(target = scraperThread, args = (CZC(), ))
@@ -34,4 +38,5 @@ if __name__ == '__main__':
         while True:
             time.sleep(1)
     except KeyboardInterrupt:
+        log(Severity.FAIL, "Keyboard interrupt, exiting...")
         pass

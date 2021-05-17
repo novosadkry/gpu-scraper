@@ -2,6 +2,9 @@ import jsons
 import threading
 import shortuuid
 
+from log import Severity
+from log import log
+
 from redis import Redis
 
 class Product():
@@ -30,10 +33,14 @@ class Product():
         if self.inStock != other.inStock: return False
         return True
 
-redis = Redis(host = 'ip.zahrajto.wtf', port = 25543, password = 'tvojemama')
-
+redis = None
 storedProducts = {}
 fetchLock = threading.Lock()
+
+def setupRedis(**kwargs):
+    global redis
+    redis = Redis(**kwargs)
+    loadProducts()
 
 def loadProducts():
     count = 0
@@ -41,7 +48,7 @@ def loadProducts():
         product = Product.fromJSON(redis.get(key))
         storedProducts[product.id] = product
         count += 1
-    print(f"Loaded {count} products")
+    log(Severity.INFO, f"Loaded {count} products")
 
 def hasProductChanged(product: Product):
     if product.id in storedProducts:
@@ -56,7 +63,7 @@ def removeProduct(product: Product):
 def updateProduct(product: Product):
     if hasProductChanged(product):
         storedProducts[product.id] = product
-        print(product.id, jsons.dumps(product))
+        log(Severity.UPDATE, f"{product.id.ljust(16)} : [name: {product.name}, price: {product.price}, inStock: {product.inStock}]")
         redis.set(product.id, jsons.dumps(product))
 
 def onProductFetch(product: Product):
