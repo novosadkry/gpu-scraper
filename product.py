@@ -57,16 +57,21 @@ def hasProductChanged(product: Product):
     return True
 
 def removeProduct(product: Product):
-    storedProducts.pop(product.id, None)
-    redis.delete(product.id)
+    if product.id in storedProducts:
+        storedProducts.pop(product.id, None)
+        redis.delete(product.id)
+        logProduct(Severity.REMOVE, product)
 
 def updateProduct(product: Product):
     if hasProductChanged(product):
         storedProducts[product.id] = product
-        log(Severity.UPDATE, product.id, f"Name: '{product.name}', Price: {product.price}, InStock: {product.inStock}")
         redis.set(product.id, jsons.dumps(product))
+        logProduct(Severity.UPDATE, product)
 
 def onProductFetch(product: Product):
     with fetchLock:
         if product.inStock > 0: updateProduct(product)
         else: removeProduct(product)
+
+def logProduct(severity: Severity, product: Product):
+    log(severity, product.id, f"Name: '{product.name}', Price: {product.price}, InStock: {product.inStock}")
