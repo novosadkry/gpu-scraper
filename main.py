@@ -11,6 +11,8 @@ from product import onProductFetch
 from log import Severity
 from log import log
 
+from config import config
+
 import threading
 import time
 
@@ -19,19 +21,23 @@ def scraperThread(scraper: Scraper):
         scraper.scrape(onProductFetch)
 
 if __name__ == '__main__':
-    setupRedis(host = 'ip.zahrajto.wtf', port = 25543, password = 'tvojemama')
+    setupRedis(
+        host = config['Redis']['host'],
+        port = int(config['Redis']['port']),
+        password = config['Redis']['password']
+    )
 
-    alzaThread = threading.Thread(target = scraperThread, args = (Alza(3), ))
-    czcThread = threading.Thread(target = scraperThread, args = (CZC(3), ))
-    tsThread = threading.Thread(target = scraperThread, args = (TSBohemia(5), ))
+    alzaThread = threading.Thread(target = scraperThread, args = (Alza(int(config['Alza']['delay'])), ))
+    czcThread = threading.Thread(target = scraperThread, args = (CZC(int(config['CZC']['delay'])), ))
+    tsThread = threading.Thread(target = scraperThread, args = (TSBohemia(int(config['TSBohemia']['delay'])), ))
 
     alzaThread.daemon = True
     czcThread.daemon = True
     tsThread.daemon = True
 
-    alzaThread.start()
-    czcThread.start()
-    tsThread.start()
+    if config['Alza']['enabled']: alzaThread.start()
+    if config['CZC']['enabled']: czcThread.start()
+    if config['TSBohemia']['enabled']: tsThread.start()
 
     try:
         while True:
