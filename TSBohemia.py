@@ -58,7 +58,8 @@ class TSBohemia(Scraper):
 
                 link = '/' + product.find('a', class_='stihref')['href']
                 stock = product.find('em', class_='imgyes')
-                stock = 0 if stock is None else getDigitFromStock(stock.text)
+
+                stock = 0 if stock is None else max(1, getDigitFromStock(stock.text))
 
                 callback(Product(self.store, uid, name, price, stock, link))
                 count += 1
