@@ -39,6 +39,8 @@ if __name__ == '__main__':
     if config['CZC']['enabled']: czcThread.start()
     if config['TSBohemia']['enabled']: tsThread.start()
 
+    log(Severity.INFO, "Main", "Started!")
+
     try:
         while True:
             time.sleep(1)
