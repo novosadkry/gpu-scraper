@@ -1,11 +1,12 @@
 import jsons
+import requests
 import threading
-import shortuuid
 
 from log import Severity
 from log import log
 
 from redis import Redis
+from config import config
 
 class Product():
     def __init__(self, store, uid, name, price, inStock, link):
@@ -37,6 +38,9 @@ redis = None
 storedProducts = {}
 fetchLock = threading.Lock()
 
+postUrl = config['WebHost']['url'] + config['WebHost']['path']
+postPass = config['WebHost']['pass']
+
 def setupRedis(**kwargs):
     global redis
     redis = Redis(**kwargs)
@@ -60,12 +64,20 @@ def removeProduct(product: Product):
     if product.id in storedProducts:
         storedProducts.pop(product.id, None)
         redis.delete(product.id)
+        requests.post(postUrl, json={
+            "type": "REMOVE",
+            "id": product.id,
+            "password": postPass})
         logProduct(Severity.REMOVE, product)
 
 def updateProduct(product: Product):
     if hasProductChanged(product):
         storedProducts[product.id] = product
         redis.set(product.id, jsons.dumps(product))
+        requests.post(postUrl, json={
+            "type": "UPDATE",
+            "id": product.id,
+            "password": postPass})
         logProduct(Severity.UPDATE, product)
 
 def onProductFetch(product: Product):
