@@ -4,6 +4,7 @@ from datetime import datetime
 import threading
 
 class Severity(Enum):
+    DEBUG = '\033[90m'
     INFO = '\033[96m'
     UPDATE = '\033[92m'
     REMOVE = '\033[95m'
