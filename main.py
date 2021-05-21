@@ -20,6 +20,7 @@ import time
 def scraperThread(scraper: Scraper):
     logc(Severity.DEBUG, scraper.store, "Thread started!")
     while True:
+        time.sleep(scraper.delay)
         scraper.scrape(onProductFetch)
 
 if __name__ == '__main__':
