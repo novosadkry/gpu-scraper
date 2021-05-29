@@ -1,4 +1,5 @@
 from enum import Enum
+from config import config
 from datetime import datetime
 
 import threading
@@ -18,6 +19,9 @@ SEP = f'{ENDC}{BOLD}>>{ENDC}'
 logLock = threading.Lock()
 
 def log(severity: Severity, source, *values, separator=' '):
+    if severity == Severity.DEBUG and not config.getboolean('Debug', 'enabled'):
+        return
+
     COLOR = severity.value
 
     time = datetime.now()
