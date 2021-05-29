@@ -3,7 +3,7 @@ import requests
 import threading
 
 from log import Severity
-from log import log
+from log import logc
 
 from redis import Redis
 from config import config
@@ -30,60 +30,62 @@ class Product():
         )
 
     def compare(self, other):
+        if self.id != other.id: return False
         if self.price != other.price: return False
         if self.inStock != other.inStock: return False
         return True
 
-redis = None
-storedProducts = {}
-fetchLock = threading.Lock()
+    def __eq__(self, value):
+        return self.compare(value) if isinstance(value, Product) else False
+
+    def __hash__(self):
+        return hash(self.id + str(self.price) + str(self.inStock))
 
 postUrl = config['WebHost']['url'] + config['WebHost']['path']
 postPass = config['WebHost']['pass']
 
-def setupRedis(**kwargs):
-    global redis
-    redis = Redis(**kwargs)
-    loadProducts()
+class ProductHandler():
+    def __init__(self, store):
+        self.store = store
+        self.storedProducts = set()
+        self.newBatch = True
+        self.buffer = set()
 
-def loadProducts():
-    count = 0
-    for key in redis.scan_iter("*"):
-        product = Product.fromJSON(redis.get(key))
-        storedProducts[product.id] = product
-        count += 1
-    log(Severity.INFO, "Redis", f"Loaded {count} products")
+    def setupRedis(self, **kwargs):
+        self.redis = Redis(**kwargs)
+        # TODO: Flush DB on start
+        self.__loadProducts()
 
-def hasProductChanged(product: Product):
-    if product.id in storedProducts:
-        sp = storedProducts[product.id]
-        return not sp.compare(product)
-    return True
+    def __loadProducts(self):
+        for key in self.redis.scan_iter(f"{self.store}:*"):
+            product = Product.fromJSON(self.redis.get(key))
+            self.storedProducts.add(product)
+        logc(Severity.INFO, self.store, f"Loaded {len(self.storedProducts)} products")
 
-def removeProduct(product: Product):
-    if product.id in storedProducts:
-        storedProducts.pop(product.id, None)
-        redis.delete(product.id)
-        requests.post(postUrl, json={
-            "type": "REMOVE",
-            "id": product.id,
-            "password": postPass})
-        logProduct(Severity.REMOVE, product)
+    def push(self, product: Product):
+        if self.newBatch:
+            self.buffer.clear()
+        self.buffer.add(product)
+        self.newBatch = False
 
-def updateProduct(product: Product):
-    if hasProductChanged(product):
-        storedProducts[product.id] = product
-        redis.set(product.id, jsons.dumps(product))
-        requests.post(postUrl, json={
-            "type": "UPDATE",
-            "id": product.id,
-            "password": postPass})
-        logProduct(Severity.UPDATE, product)
+    def flush(self):
+        newProducts = self.buffer - self.storedProducts
+        removedProducts = self.storedProducts - self.buffer
 
-def onProductFetch(product: Product):
-    with fetchLock:
-        if product.inStock > 0: updateProduct(product)
-        else: removeProduct(product)
+        for product in newProducts:
+            self.redis.set(product.id, jsons.dumps(product))
+            logProduct(Severity.UPDATE, product)
+
+        for product in removedProducts:
+            self.redis.delete(product.id, jsons.dumps(product))
+            logProduct(Severity.REMOVE, product)
+
+        # requests.post(postUrl, json={
+        #     "type": "UPDATE",
+        #     "password": postPass})
+
+        self.storedProducts = self.buffer
+        self.newBatch = True
 
 def logProduct(severity: Severity, product: Product):
-    log(severity, product.id, f"Name: '{product.name}', Price: {product.price}, InStock: {product.inStock}")
+    logc(severity, product.id, f"Name: '{product.name}', Price: {product.price}, InStock: {product.inStock}")
