@@ -11,18 +11,6 @@ from log import logc
 from product import Product
 from bs4 import BeautifulSoup
 
-def getDigitFromStock(stock) -> int:
-    if stock is not None:
-        for s in stock.split():
-            if s.isdigit():
-                stock = int(s)
-                break
-        else:
-            stock = 0
-    else:
-        stock = 0
-    return stock
-
 class TSBohemia(Scraper):
     def __init__(self, delay):
         Scraper.__init__(self, "TSBohemia", "https://www.tsbohemia.cz", delay)
@@ -59,7 +47,7 @@ class TSBohemia(Scraper):
                 link = '/' + product.find('a', class_='stihref')['href']
                 stock = product.find('em', class_='imgyes')
 
-                stock = 0 if stock is None else max(1, getDigitFromStock(stock.text))
+                stock = 0 if stock is None else max(1, self.getDigitFromStock(stock.text))
 
                 callback(Product(self.store, uid, name, price, stock, link))
                 count += 1

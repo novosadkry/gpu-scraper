@@ -10,18 +10,6 @@ from log import logc
 from product import Product
 from bs4 import BeautifulSoup
 
-def getDigitFromStock(stock) -> int:
-    if stock is not None:
-        for s in stock.split():
-            if s.isdigit():
-                stock = int(s)
-                break
-        else:
-            stock = 0
-    else:
-        stock = 0
-    return stock
-
 class Alza(Scraper):
     def __init__(self, delay):
         Scraper.__init__(self, "Alza", "https://www.alza.cz", delay)
@@ -56,7 +44,7 @@ class Alza(Scraper):
                 link = self.url + meta['href']
 
                 stock = meta['data-impression-dimension13']
-                stock = getDigitFromStock(stock)
+                stock = self.getDigitFromStock(stock)
 
                 callback(Product(self.store, uid, name, price, stock, link))
                 count += 1
