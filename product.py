@@ -72,13 +72,13 @@ class ProductHandler():
         newProducts = self.buffer - self.storedProducts
         removedProducts = self.storedProducts - self.buffer
 
-        for product in newProducts:
-            self.redis.set(product.id, jsons.dumps(product))
-            logProduct(Severity.UPDATE, product)
-
         for product in removedProducts:
             self.redis.delete(product.id, jsons.dumps(product))
             logProduct(Severity.REMOVE, product)
+
+        for product in newProducts:
+            self.redis.set(product.id, jsons.dumps(product))
+            logProduct(Severity.UPDATE, product)
 
         # requests.post(postUrl, json={
         #     "type": "UPDATE",
