@@ -13,6 +13,8 @@ from config import config
 import threading
 import time
 
+# TODO: Timestamp k datům (pro filtr "Nové")
+
 def scraperThread(scraper: Scraper):
     logc(Severity.DEBUG, scraper.store, "Thread started!")
 

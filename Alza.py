@@ -14,13 +14,15 @@ class Alza(Scraper):
     def __init__(self, delay):
         Scraper.__init__(self, "Alza", "https://www.alza.cz", delay)
 
-    def scrape(self, callback):
-        pageNum = 1
+    def scrape(self):
         session = requests.session()
 
         urlPath = "/graficke-karty/18842862-p{pageNum}.htm"
 
-        count = 0
+        productCount = 0
+        totalStock = 0
+        pageNum = 1
+
         while (True):
             page = session.get(self.url + urlPath.format(pageNum = pageNum))
 
@@ -35,6 +37,7 @@ class Alza(Scraper):
             if len(products) < 1:
                 break
 
+            pageStock = 0
             for product in products:
                 meta = product.find('a', class_='name')
 
@@ -46,10 +49,19 @@ class Alza(Scraper):
                 stock = meta['data-impression-dimension13']
                 stock = self.getDigitFromStock(stock)
 
-                callback(Product(self.store, uid, name, price, stock, link))
-                count += 1
+                if stock > 0:
+                    self.handler.push(Product(self.store, uid, name, price, stock, link))
+                    pageStock += 1
+
+                productCount += 1
+
+            if pageStock < 1:
+                break
 
             pageNum += 1
+            totalStock += pageStock
+
             time.sleep(self.delay)
 
-        logc(Severity.INFO, self.store, f"Checked {count} products")
+        self.handler.flush()
+        logc(Severity.INFO, self.store, f"Fetched {productCount} products ({totalStock} in stock) out of {pageNum} pages")

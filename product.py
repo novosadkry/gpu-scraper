@@ -70,6 +70,9 @@ class ProductHandler():
         self.newBatch = False
 
     def flush(self):
+        if self.newBatch:
+            return
+
         newProducts = self.buffer - self.storedProducts
         removedProducts = self.storedProducts - self.buffer
 
