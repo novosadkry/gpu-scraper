@@ -84,9 +84,10 @@ class ProductHandler():
             self.redis.set(product.id, jsons.dumps(product))
             logProduct(Severity.UPDATE, product)
 
-        # requests.post(postUrl, json={
-        #     "type": "UPDATE",
-        #     "password": postPass})
+        requests.post(postUrl, json={
+            "type": "UPDATE",
+            "store": self.store,
+            "password": postPass})
 
         self.storedProducts = self.buffer
         self.newBatch = True
