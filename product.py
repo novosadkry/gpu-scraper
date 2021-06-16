@@ -53,7 +53,8 @@ class ProductHandler():
 
     def setupRedis(self, **kwargs):
         self.redis = Redis(**kwargs)
-        # TODO: Flush DB on start
+        if config.getboolean('Debug', 'flushdb'):
+            self.redis.flushdb()
         self.__loadProducts()
 
     def __loadProducts(self):
