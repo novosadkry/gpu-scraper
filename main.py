@@ -10,35 +10,22 @@ from log import logc
 
 from config import config
 
-import threading
 import time
 
 # TODO: Timestamp k datům (pro filtr "Nové")
-
-def scraperThread(scraper: Scraper):
-    logc(Severity.DEBUG, scraper.store, "Thread started!")
-
-    scraper.setup()
-    while True:
-        scraper.scrape()
-        time.sleep(scraper.delay)
 
 if __name__ == '__main__':
     try:
         log(Severity.DEBUG, "Main", "-" * 15, "LOG BEGIN", "-" * 15)
         log(Severity.INFO, "Main", "Starting up...")
 
-        alzaThread = threading.Thread(target = scraperThread, args = (Alza(int(config['Alza']['delay'])), ))
-        czcThread = threading.Thread(target = scraperThread, args = (CZC(int(config['CZC']['delay'])), ))
-        tsThread = threading.Thread(target = scraperThread, args = (TSBohemia(int(config['TSBohemia']['delay'])), ))
+        alzaScraper = Alza(int(config['Alza']['delay']))
+        czcScraper = CZC(int(config['CZC']['delay']))
+        tsScraper = TSBohemia(int(config['TSBohemia']['delay']))
 
-        alzaThread.daemon = True
-        czcThread.daemon = True
-        tsThread.daemon = True
-
-        if config.getboolean('Alza', 'enabled'): alzaThread.start()
-        if config.getboolean('CZC', 'enabled'): czcThread.start()
-        if config.getboolean('TSBohemia', 'enabled'): tsThread.start()
+        if config.getboolean('Alza', 'enabled'): alzaScraper.start()
+        if config.getboolean('CZC', 'enabled'): czcScraper.start()
+        if config.getboolean('TSBohemia', 'enabled'): tsScraper.start()
 
         log(Severity.INFO, "Main", "Started!")
 
@@ -47,6 +34,13 @@ if __name__ == '__main__':
 
     except KeyboardInterrupt:
         log(Severity.FAIL, "Main", "Keyboard interrupt, exiting...")
-        pass
+
+        alzaScraper.stop()
+        czcScraper.stop()
+        tsScraper.stop()
+
+        alzaScraper.thread.join()
+        czcScraper.thread.join()
+        tsScraper.thread.join()
 
     log(Severity.DEBUG, "Main", "-" * 16, "LOG END", "-" * 16)
