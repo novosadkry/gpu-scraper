@@ -1,3 +1,5 @@
+import time
+
 from CZC import CZC
 from Alza import Alza
 from TSBohemia import TSBohemia
@@ -9,10 +11,6 @@ from log import log
 from log import logc
 
 from config import config
-
-import time
-
-# TODO: Timestamp k datům (pro filtr "Nové")
 
 if __name__ == '__main__':
     try:

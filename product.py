@@ -2,6 +2,8 @@ import jsons
 import requests
 import threading
 
+from time import time
+
 from log import Severity
 from log import logc
 
@@ -16,6 +18,7 @@ class Product():
         self.price = price
         self.inStock = inStock
         self.link = link
+        self.timestamp = int(time())
 
     @staticmethod
     def fromJSON(s):
