@@ -48,6 +48,7 @@ class Alza(Scraper):
 
                 stock = meta['data-impression-dimension13']
                 stock = self.getDigitFromStock(stock)
+                stock = 0 if stock == 2021 else stock # FIXME
 
                 if stock > 0:
                     self.handler.push(Product(self.store, uid, name, price, stock, link))
